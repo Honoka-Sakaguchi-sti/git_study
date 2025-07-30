@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # MySQLデータベースサービス
+  db:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: pass # ★★★ 強力なパスワードに変更してください！
+      MYSQL_DATABASE: my_upsert_db # init.sqlと合わせる
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass # ★★★ 強力なパスワードに変更してください！
+    volumes:
+      - ./mysql-init:/docker-entrypoint-initdb.d
+      - db_data:/var/lib/mysql # DBデータを永続化
+    ports:
+      - "3306:3306"
+    # healthcheck: # MySQLが準備完了になるまで待つためのヘルスチェック
+    #   test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+    #   interval: 5s
+    #   timeout: 5s
+    #   retries: 10
+    #   start_period: 30s # init.sqlの実行時間に応じて調整
+
+  # プロジェクトインポートスクリプト実行用サービス
+  importer:
+    build:
+      context: ./scripts
+      dockerfile: Dockerfile
+    container_name: upsert_importer_service
+    volumes:
+      - ./scripts:/app/scripts # スクリプトをコンテナにマウント
+      - ./data:/app/data       # CSVファイルをコンテナにマウント
+    environment:
+      DATABASE_HOST: db # DBサービス名
+      DATABASE_NAME: my_upsert_db
+      DATABASE_USER: user
+      DATABASE_PASSWORD: pass
+      DATABASE_PORT: 3306
+
+volumes:
+  db_data:
