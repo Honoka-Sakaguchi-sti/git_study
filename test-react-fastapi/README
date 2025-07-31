@@ -7,4 +7,4 @@ docker network rm $(docker network ls | grep -v "bridge\|host\|none" | awk '{pri
 docker builder prune -af
 ```
 
-git revert VScode
+git revert VScode実行
